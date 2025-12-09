@@ -43,12 +43,13 @@ trap cleanup SIGINT SIGTERM
 # Ensure clean state before starting
 ./stop-dev.sh
 
-# 2. Start Backend
-echo "⚡ Starting Backend (Azure Functions)..."
-cd $BACKEND_DIR
-func start &
+# 3. Start Backend (ASP.NET Core)
+echo "🧠 Starting AutoMender.Core (Backend)..."
+pushd AutoMender.Core > /dev/null
+# Use dotnet run on port 7071
+dotnet run --urls=http://localhost:7071 &
 BACKEND_PID=$!
-cd ..
+popd > /dev/null
 
 # 3. Start Frontend
 echo "💻 Building Frontend..."

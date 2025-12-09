@@ -16,6 +16,7 @@
 *   **Autonomous Code Fixing**: Uses Semantic Kernel to analyze stack traces and generate safe, compilable fixes.
 *   **Validation Gate**: Roslyn-based `CompileCheck` ensures no broken code is ever proposed.
 *   **Dynamic AI Configuration**: Switch between **OpenAI**, **Groq**, or **DeepSeek** at runtime without redeploying.
+*   **Cloud Agnostic**: Built on **ASP.NET Core 9.0**, running in portable Docker containers. Deploy to AWS, Azure, GCP, or on-prem.
 *   **Unified Full-Stack Experience**: Bundled with a bash orchestrator (`start-dev.sh`) to run Backend, Frontend, and Infrastructure in one command.
 
 ---
@@ -28,7 +29,7 @@ The system follows an event-driven architecture pattern:
 ```mermaid
 graph TD
     A[Simulated Bug] -->|HTTP POST| B(RabbitMQ Publisher)
-    B -->|Incidents Queue| C(Azure Function Consumer)
+    B -->|Incidents Queue| C(ASP.NET Core BackgroundService)
     C -->|Analyze Stack Trace| D{AI Agent}
     D -->|Generate Fix| E[Roslyn Compiler]
     E -->|Valid| F[Incident Store]
@@ -42,14 +43,14 @@ graph TD
 C4Container
     Person(user, "User", "Developer monitoring the system")
     Container(blazor, "Blazor Frontend", ".NET 9 WASM", "Displays live incidents and AI analysis")
-    Container(func, "Azure Functions Core", ".NET 9 Isolated", "Orchestrates AI agents and processes messages")
+    Container(api, "ASP.NET Core API", ".NET 9 Web API", "Orchestrates AI agents and processes messages")
     Container(rabbitmq, "RabbitMQ", "Docker Container", "Buffers incident reports")
     ContainerDb(store, "In-Memory Store", "Singleton", "Stores processed incidents")
     
     Rel(user, blazor, "Views Incident Feed")
-    Rel(blazor, func, "Polls /api/incidents", "HTTP/JSON")
-    Rel(func, rabbitmq, "Consumes Messages", "AMQP")
-    Rel(func, store, "Reads/Writes", "In-Memory")
+    Rel(blazor, api, "Polls /api/incidents", "HTTP/JSON")
+    Rel(api, rabbitmq, "Consumes Messages", "Background Worker")
+    Rel(api, store, "Reads/Writes", "In-Memory")
 ```
 
 ---
