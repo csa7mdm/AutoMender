@@ -12,24 +12,13 @@ namespace AutoMender.Core.Controllers
     {
         private readonly IncidentStore _store;
         private readonly ILogger<IncidentsController> _logger;
-        private readonly IConnection? _rabbitConnection;
+        private readonly string _rabbitConnectionString;
 
         public IncidentsController(IncidentStore store, ILogger<IncidentsController> logger, IConfiguration config)
         {
             _store = store;
             _logger = logger;
-            
-            // Initialize RabbitMQ Connection for Publishing
-            // In a real app, inject a singleton IConnection or Publisher service
-            try 
-            {
-                var factory = new ConnectionFactory { Uri = new Uri(config["RabbitMQConnection"] ?? "amqp://guest:guest@localhost:5672") };
-                _rabbitConnection = factory.CreateConnectionAsync().Result; // Sync over async for simplicity in constructor POC
-            }
-            catch(Exception ex)
-            {
-                _logger.LogError($"Failed to connect to RabbitMQ: {ex.Message}");
-            }
+            _rabbitConnectionString = config["RabbitMQConnection"] ?? "amqp://guest:guest@localhost:5672";
         }
 
         [HttpGet]
@@ -41,19 +30,32 @@ namespace AutoMender.Core.Controllers
         [HttpPost("simulate")]
         public async Task<IActionResult> Simulate([FromBody] JsonElement payload)
         {
-            if (_rabbitConnection == null) 
-                return StatusCode(503, "RabbitMQ not available");
+            try
+            {
+                var message = payload.ToString();
+                _logger.LogInformation($"Publishing simulation: {message}");
 
-            var message = payload.ToString();
-            _logger.LogInformation($"Publishing simulation: {message}");
+                var factory = new ConnectionFactory { Uri = new Uri(_rabbitConnectionString) };
+                
+                // create connection and channel
+                using var connection = await factory.CreateConnectionAsync();
+                using var channel = await connection.CreateChannelAsync();
 
-            using var channel = await _rabbitConnection.CreateChannelAsync();
-            await channel.QueueDeclareAsync(queue: "incidents-queue", durable: true, exclusive: false, autoDelete: false, arguments: null);
+                await channel.QueueDeclareAsync(queue: "incidents-queue", durable: true, exclusive: false, autoDelete: false, arguments: null);
 
-            var body = Encoding.UTF8.GetBytes(message);
-            await channel.BasicPublishAsync(exchange: "", routingKey: "incidents-queue", body: body);
+                var body = Encoding.UTF8.GetBytes(message);
+                
+                var props = new BasicProperties();
+                await channel.BasicPublishAsync(exchange: "", routingKey: "incidents-queue", mandatory: false, basicProperties: props, body: body);
 
-            return Ok("Simulation Sent");
+                _logger.LogInformation("✅ Message published to queue");
+                return Ok("Simulation Sent");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Failed to publish: {ex.Message}");
+                return StatusCode(500, $"Failed to publish: {ex.Message}");
+            }
         }
     }
 }

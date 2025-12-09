@@ -60,7 +60,6 @@ C4Container
 ### Prerequisites
 *   .NET 9 SDK
 *   Docker (for RabbitMQ)
-*   Azure Functions Core Tools v4
 
 ### Quick Start (One Command)
 We've optimized the developer experience to a single script that manages container health, backend, and frontend.
@@ -79,7 +78,7 @@ cd AutoMender
 Once the app is running, open a new terminal and fire this payload to simulate a production crash:
 
 ```bash
-curl -X POST http://localhost:7071/api/simulate \
+curl -X POST http://localhost:7071/api/Incidents/simulate \
      -H "Content-Type: application/json" \
      -d '{ "sourceCode": "class P { void M() { string s=null; s.Trim(); } }", 
            "errorLog": "System.NullReferenceException: Object reference not set to an instance of an object." }'

@@ -13,18 +13,19 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddSingleton<ConfigurationService>();
 builder.Services.AddSingleton<IncidentStore>();
 
-// Register AI Agent
-builder.Services.AddScoped<ICodeFixerAgent, CodeFixerAgent>();
-builder.Services.AddScoped(sp =>
+// Add CORS
+builder.Services.AddCors(options =>
 {
-    // Same dynamic config logic as before, just adapted for DI scope
-    // The Kernel is lightweight to build
-    // Note: CodeFixerAgent builds its own kernel now due to dynamic settings requirement, 
-    // so we might not need to register Kernel here globally unless other services use it.
-    // However, keeping the builder available is good practice.
-    var kernelBuilder = Kernel.CreateBuilder();
-    return kernelBuilder.Build(); 
+    options.AddPolicy("AllowFrontend",
+        builder => builder.SetIsOriginAllowed(origin => true) // Allow any origin for dev
+                          .AllowAnyMethod()
+                          .AllowAnyHeader()
+                          .AllowCredentials());
 });
+
+// Register AI Agent
+builder.Services.AddSingleton<ICodeFixerAgent, CodeFixerAgent>();
+// Start Kernel builder as singleton too or just let agent build it internally (Agent builds it internally now)
 
 // Register Background Worker for RabbitMQ
 builder.Services.AddHostedService<RabbitMQWorker>();
@@ -37,6 +38,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseCors("AllowFrontend");
 
 app.UseAuthorization();
 

@@ -30,37 +30,48 @@ namespace AutoMender.Core.Workers
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            try
+            while (!stoppingToken.IsCancellationRequested)
             {
-                var factory = new ConnectionFactory { Uri = new Uri(_connectionString) };
-                _connection = await factory.CreateConnectionAsync(stoppingToken);
-                _channel = await _connection.CreateChannelAsync(cancellationToken: stoppingToken);
-
-                await _channel.QueueDeclareAsync(queue: "incidents-queue", durable: true, exclusive: false, autoDelete: false, arguments: null, cancellationToken: stoppingToken);
-
-                _logger.LogInformation("🐰 Connected to RabbitMQ. Listening for incidents...");
-
-                var consumer = new AsyncEventingBasicConsumer(_channel);
-                consumer.ReceivedAsync += async (model, ea) =>
+                try
                 {
-                    var body = ea.Body.ToArray();
-                    var message = Encoding.UTF8.GetString(body);
-                    _logger.LogInformation($"📥 Received Simulation: {message}");
+                    _logger.LogInformation("🐰 Worker is attempting to connect to RabbitMQ...");
+                    
+                    var factory = new ConnectionFactory { Uri = new Uri(_connectionString) };
+                    _connection = await factory.CreateConnectionAsync(stoppingToken); // Sync to Async conversion if needed, but CreateConnectionAsync is standard
+                    _channel = await _connection.CreateChannelAsync(cancellationToken: stoppingToken);
 
-                    await ProcessMessageAsync(message);
-                };
+                    await _channel.QueueDeclareAsync(queue: "incidents-queue", durable: true, exclusive: false, autoDelete: false, arguments: null, cancellationToken: stoppingToken);
 
-                await _channel.BasicConsumeAsync(queue: "incidents-queue", autoAck: true, consumer: consumer, cancellationToken: stoppingToken);
-                
-                // Keep the service alive
-                while (!stoppingToken.IsCancellationRequested)
-                {
-                    await Task.Delay(1000, stoppingToken);
+                    _logger.LogInformation("✅ RabbitMQ Worker Connected! Listening for 'incidents-queue'...");
+
+                    var consumer = new AsyncEventingBasicConsumer(_channel);
+                    consumer.ReceivedAsync += async (model, ea) =>
+                    {
+                        var body = ea.Body.ToArray();
+                        var message = Encoding.UTF8.GetString(body);
+                        _logger.LogInformation($"📥 Received Simulation: {message}");
+
+                        await ProcessMessageAsync(message);
+                    };
+
+                    await _channel.BasicConsumeAsync(queue: "incidents-queue", autoAck: true, consumer: consumer, cancellationToken: stoppingToken);
+                    
+                    // Keep the service alive and connected
+                    while (!stoppingToken.IsCancellationRequested && _connection.IsOpen)
+                    {
+                        await Task.Delay(1000, stoppingToken);
+                    }
                 }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"❌ RabbitMQ Worker failed: {ex.Message}");
+                catch (OperationCanceledException)
+                {
+                    // Graceful shutdown
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError($"❌ RabbitMQ Worker connection broken or failed: {ex.Message}. Retrying in 5s...");
+                    try { await Task.Delay(5000, stoppingToken); } catch { /* ignore cancel during delay */ }
+                }
             }
         }
 
