@@ -94,6 +94,7 @@ AutoMender supports any OpenAI-compatible provider. You can configure this live 
 | **Groq** | `llama-3.1-70b-versatile` | `https://api.groq.com/openai/v1` |
 | **OpenAI**| `gpt-4o` | *Empty* |
 | **DeepSeek**| `deepseek-coder` | `https://api.deepseek.com/v1` |
+| **GitHub**| *Check "Integration Settings"* | *Token used for Auto-PRs* |
 
 ---
 

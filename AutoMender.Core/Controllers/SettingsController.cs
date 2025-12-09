@@ -24,7 +24,8 @@ namespace AutoMender.Core.Controllers
                 settings.Provider,
                 ApiKey = string.IsNullOrEmpty(settings.ApiKey) ? "" : "***",
                 settings.ModelId,
-                settings.BaseUrl
+                settings.BaseUrl,
+                GitHubToken = string.IsNullOrEmpty(settings.GitHubToken) ? "" : "***"
             };
             return Ok(safeSettings);
         }

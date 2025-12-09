@@ -8,6 +8,7 @@ namespace AutoMender.Core
         public string ApiKey { get; set; } = string.Empty;
         public string ModelId { get; set; } = "gpt-4";
         public string BaseUrl { get; set; } = string.Empty;
+        public string GitHubToken { get; set; } = string.Empty;
     }
 
     public class ConfigurationService
@@ -22,7 +23,8 @@ namespace AutoMender.Core
                 Provider = "Groq", 
                 ApiKey = Environment.GetEnvironmentVariable("OpenAI_ApiKey") ?? "",
                 ModelId = Environment.GetEnvironmentVariable("OpenAI_ModelId") ?? "meta-llama/llama-4-maverick-17b-128e-instruct",
-                BaseUrl = Environment.GetEnvironmentVariable("OpenAI_BaseUrl") ?? "https://api.groq.com/openai/v1"
+                BaseUrl = Environment.GetEnvironmentVariable("OpenAI_BaseUrl") ?? "https://api.groq.com/openai/v1",
+                GitHubToken = Environment.GetEnvironmentVariable("GitHub_Token") ?? ""
             };
         }
 
