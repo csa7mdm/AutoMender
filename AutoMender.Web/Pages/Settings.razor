@@ -1,0 +1,112 @@
+@page "/settings"
+@inject HttpClient Http
+
+<PageTitle>Admin Settings</PageTitle>
+
+<h1>Admin Configuration</h1>
+
+<div class="card mt-4">
+    <div class="card-body">
+        <h5 class="card-title">AI Provider Settings</h5>
+        <p class="card-text">Configure the AI backend for the Code Fixer Agent.</p>
+
+        @if (isLoading)
+        {
+            <p><em>Loading settings...</em></p>
+        }
+        else
+        {
+            <EditForm Model="@settings" OnValidSubmit="@HandleValidSubmit">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+
+                <div class="mb-3">
+                    <label for="provider" class="form-label">Provider</label>
+                    <InputSelect id="provider" class="form-control" @bind-Value="settings.Provider">
+                        <option value="OpenAI">OpenAI</option>
+                        <option value="Groq">Groq</option>
+                        <option value="DeepSeek">DeepSeek</option>
+                    </InputSelect>
+                </div>
+
+                <div class="mb-3">
+                    <label for="apiKey" class="form-label">API Key</label>
+                    <InputText id="apiKey" class="form-control" @bind-Value="settings.ApiKey" placeholder="Enter API Key (leave empty to keep unchanged if masked)" />
+                    <small class="text-muted">Current key is hidden for security.</small>
+                </div>
+
+                <div class="mb-3">
+                    <label for="modelId" class="form-label">Model ID</label>
+                    <InputText id="modelId" class="form-control" @bind-Value="settings.ModelId" />
+                </div>
+
+                 <div class="mb-3">
+                    <label for="baseUrl" class="form-label">Base URL (Active if Provider is Groq/DeepSeek)</label>
+                    <InputText id="baseUrl" class="form-control" @bind-Value="settings.BaseUrl" placeholder="e.g. https://api.groq.com/openai/v1" />
+                </div>
+
+                <button type="submit" class="btn btn-primary">Save Settings</button>
+            </EditForm>
+        }
+
+        @if (!string.IsNullOrEmpty(statusMessage))
+        {
+            <div class="alert alert-info mt-3">@statusMessage</div>
+        }
+    </div>
+</div>
+
+@code {
+    private AISettings settings = new();
+    private bool isLoading = true;
+    private string statusMessage = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // Try to fetch settings from backend
+            // In a real scenario, handle potential 404/Connection errors gracefully
+            settings = await Http.GetFromJsonAsync<AISettings>("api/settings") ?? new AISettings();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error fetching settings: {ex.Message}");
+            // Fallback for UI visualization if backend is offline
+            settings = new AISettings();
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        statusMessage = "Saving...";
+        try
+        {
+            var response = await Http.PostAsJsonAsync("api/settings", settings);
+            if (response.IsSuccessStatusCode)
+            {
+                statusMessage = "Settings saved successfully!";
+            }
+            else
+            {
+                statusMessage = "Error saving settings.";
+            }
+        }
+        catch (Exception ex)
+        {
+            statusMessage = $"Error: {ex.Message}";
+        }
+    }
+
+    public class AISettings
+    {
+        public string Provider { get; set; } = "Groq";
+        public string ApiKey { get; set; } = "";
+        public string ModelId { get; set; } = "meta-llama/llama-4-maverick-17b-128e-instruct";
+        public string BaseUrl { get; set; } = "https://api.groq.com/openai/v1";
+    }
+}

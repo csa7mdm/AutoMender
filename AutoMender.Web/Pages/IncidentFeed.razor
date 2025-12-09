@@ -1,0 +1,125 @@
+@page "/incidents"
+@using AutoMender.Web.Models
+@inject HttpClient Http
+
+<PageTitle>Incident Feed</PageTitle>
+
+<h1>Incident Feed</h1>
+
+@if (incidents == null)
+{
+    <p><em>Loading incidents...</em></p>
+}
+else
+{
+    @if (incidents.Count == 0)
+    {
+        <div class="alert alert-info">No recent incidents. Simulate one to see it here!</div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Severity</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var incident in incidents)
+                    {
+                        <tr @onclick="() => ShowAnalysis(incident)" class="incident-row">
+                            <td>@incident.Title</td>
+                            <td>
+                                <span class="badge @GetBadgeClass(incident.Severity)">@incident.Severity</span>
+                            </td>
+                            <td>
+                                <button class="btn btn-primary btn-sm" @onclick="() => ShowAnalysis(incident)" @onclick:stopPropagation="true">View Analysis</button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+}
+
+@if (showModal)
+{
+    <div class="modal-backdrop show"></div>
+    <div class="modal show d-block" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Root Cause Analysis</h5>
+                    <button type="button" class="btn-close" @onclick="CloseModal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>@selectedIncident?.RootCauseAnalysis</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseModal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<Incident>? incidents;
+    private bool showModal = false;
+    private Incident? selectedIncident;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Start a background polling loop
+        _ = PollIncidents();
+    }
+
+    private async Task PollIncidents()
+    {
+        var timer = new PeriodicTimer(TimeSpan.FromSeconds(3));
+        while (await timer.WaitForNextTickAsync())
+        {
+            try
+            {
+                // Fetch live data from backend
+                var fetchedIncidents = await Http.GetFromJsonAsync<List<Incident>>("api/incidents");
+                if (fetchedIncidents != null)
+                {
+                    incidents = fetchedIncidents;
+                    StateHasChanged(); // Refresh UI
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error polling incidents: {ex.Message}");
+                // Ideally show a "Reconnecting..." badge in UI
+            }
+        }
+    }
+
+    private string GetBadgeClass(string severity)
+    {
+        return severity.ToLower() switch
+        {
+            "crash" => "badge-crash",
+            "warning" => "badge-warning",
+            _ => "bg-secondary"
+        };
+    }
+
+    private void ShowAnalysis(Incident incident)
+    {
+        selectedIncident = incident;
+        showModal = true;
+    }
+
+    private void CloseModal()
+    {
+        showModal = false;
+        selectedIncident = null;
+    }
+}

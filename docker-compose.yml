@@ -1,0 +1,37 @@
+version: '3.4'
+
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    hostname: my-rabbit
+    container_name: auto-mender-rabbit
+
+  backend:
+    image: automender-core
+    build:
+      context: .
+      dockerfile: AutoMender.Core/Dockerfile
+    ports:
+      - "7071:80"
+    environment:
+      - AzureWebJobsStorage=UseDevelopmentStorage=true
+      - FUNCTIONS_WORKER_RUNTIME=dotnet-isolated
+      - RabbitMQConnection=amqp://guest:guest@rabbitmq:5672
+      - OpenAI_ApiKey=${OpenAI_ApiKey}
+      - OpenAI_ModelId=${OpenAI_ModelId:-gpt-4}
+      - OpenAI_BaseUrl=${OpenAI_BaseUrl}
+    depends_on:
+      - rabbitmq
+
+  frontend:
+    image: automender-web
+    build:
+      context: .
+      dockerfile: AutoMender.Web/Dockerfile
+    ports:
+      - "5031:80"
+    depends_on:
+      - backend

@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AutoMender.Core", "AutoMender.Core\AutoMender.Core.csproj", "{A377F5AD-F0EA-42B0-936E-4656849DCC98}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AutoMender.Web", "AutoMender.Web\AutoMender.Web.csproj", "{1332B93F-19C9-4DD5-BF15-D2AB0099881B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AutoMender.Tests", "AutoMender.Tests\AutoMender.Tests.csproj", "{FED61E9C-21AA-4E56-ACD9-3A6F6A3CDCC7}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A377F5AD-F0EA-42B0-936E-4656849DCC98}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A377F5AD-F0EA-42B0-936E-4656849DCC98}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A377F5AD-F0EA-42B0-936E-4656849DCC98}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A377F5AD-F0EA-42B0-936E-4656849DCC98}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1332B93F-19C9-4DD5-BF15-D2AB0099881B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1332B93F-19C9-4DD5-BF15-D2AB0099881B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1332B93F-19C9-4DD5-BF15-D2AB0099881B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1332B93F-19C9-4DD5-BF15-D2AB0099881B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FED61E9C-21AA-4E56-ACD9-3A6F6A3CDCC7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FED61E9C-21AA-4E56-ACD9-3A6F6A3CDCC7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FED61E9C-21AA-4E56-ACD9-3A6F6A3CDCC7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FED61E9C-21AA-4E56-ACD9-3A6F6A3CDCC7}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

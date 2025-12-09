@@ -1,0 +1,33 @@
+# Build results
+[Bb]in/
+[Oo]bj/
+
+# Azure Functions secrets and local settings
+local.settings.json
+host.json
+appsettings.Development.json
+
+# Visual Studio / VS Code
+.vscode/
+.vs/
+*.user
+*.suo
+
+# macOS
+.DS_Store
+
+# User-specific
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db

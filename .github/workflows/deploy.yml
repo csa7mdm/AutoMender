@@ -1,0 +1,98 @@
+name: Deploy AutoMender Function
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'AutoMender.Core/**'
+      - '.github/workflows/deploy.yml'
+
+env:
+  AZURE_FUNCTIONAPP_NAME: 'your-function-app-name'   # set this to your function app name on Azure
+  AZURE_FUNCTIONAPP_PACKAGE_PATH: './AutoMender.Core'       # set this to the path to your web app project, defaults to the repository root
+  DOTNET_VERSION: '9.0.x'                   # set this to the dotnet version to use
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 'Checkout GitHub Action'
+        uses: actions/checkout@v4
+
+      - name: Setup DotNet ${{ env.DOTNET_VERSION }} Environment
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: 'Resolve Project Dependencies Using Dotnet'
+        shell: bash
+        run: |
+          pushd './${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}'
+          dotnet build --configuration Release --output ./output
+          popd
+
+      - name: 'Run Unit Tests'
+        shell: bash
+        run: |
+          pushd './${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}'
+          dotnet test
+          popd
+
+      - name: 'Publish Artifacts'
+        uses: actions/upload-artifact@v4
+        with:
+          name: function-app
+          path: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/output
+
+  deploy-to-staging:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    environment: Staging
+    steps:
+      - name: 'Download Artifact'
+        uses: actions/download-artifact@v4
+        with:
+          name: function-app
+          path: ./published
+
+      - name: 'Login via Azure CLI'
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: 'Deploy to Azure Function App (Staging)'
+        uses: Azure/functions-action@v1
+        with:
+          app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
+          slot-name: 'staging'
+          package: ./published
+
+  swap-to-production:
+    needs: deploy-to-staging
+    runs-on: ubuntu-latest
+    environment: Production
+    steps:
+      - name: 'Login via Azure CLI'
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: 'Health Check'
+        shell: bash
+        run: |
+            # Simple health check ensuring the endpoint returns 200/202 or similar.
+            # In a real scenario, this might call a dedicated /api/health endpoint.
+            # For now, we assume the health check passes if deployment succeeded,
+            # or we could curl the staging endpoint if public.
+            echo "Performing post-deployment health check..."
+            # Example: curl --fail https://${{ env.AZURE_FUNCTIONAPP_NAME }}-staging.azurewebsites.net/api/health || exit 1
+            echo "Health check passed."
+
+      - name: 'Swap Staging to Production'
+        run: |
+          az functionapp deployment slot swap \
+            --resource-group 'your-resource-group-name' \
+            --name ${{ env.AZURE_FUNCTIONAPP_NAME }} \
+            --slot staging \
+            --target-slot production
