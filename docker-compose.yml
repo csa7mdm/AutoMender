@@ -12,13 +12,11 @@ services:
   backend:
     image: automender-core
     build:
-      context: .
-      dockerfile: AutoMender.Core/Dockerfile
+      context: ./AutoMender.Core
+      dockerfile: Dockerfile
     ports:
       - "7071:80"
     environment:
-      - AzureWebJobsStorage=UseDevelopmentStorage=true
-      - FUNCTIONS_WORKER_RUNTIME=dotnet-isolated
       - RabbitMQConnection=amqp://guest:guest@rabbitmq:5672
       - OpenAI_ApiKey=${OpenAI_ApiKey}
       - OpenAI_ModelId=${OpenAI_ModelId:-gpt-4}
