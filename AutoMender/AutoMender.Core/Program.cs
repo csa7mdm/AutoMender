@@ -13,14 +13,18 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddSingleton<ConfigurationService>();
 builder.Services.AddSingleton<IncidentStore>();
 
-// Add CORS
+// Add CORS - Configured for known frontend origins
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend",
-        builder => builder.SetIsOriginAllowed(origin => true) // Allow any origin for dev
-                          .AllowAnyMethod()
-                          .AllowAnyHeader()
-                          .AllowCredentials());
+        policy => policy.WithOrigins(
+                            "http://localhost:5031",      // Local development
+                            "http://localhost:5030",      // Alternative local port
+                            "http://automender-web:80"    // Docker container
+                        )
+                        .AllowAnyMethod()
+                        .AllowAnyHeader()
+                        .AllowCredentials());
 });
 
 // Register AI Agent
